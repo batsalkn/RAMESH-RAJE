@@ -123,6 +123,32 @@
   .entry .figure .val{font-size:19px; font-weight:700; color:var(--teal-dark); font-family:'Fraunces', serif;}
   .entry .figure .val.blank{color:#B9C8C3;}
   .entry .figure .cap{font-size:11px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-top:2px;}
+  .edit-link{
+    background:none; border:none; color:var(--teal); font-weight:700; font-size:13px;
+    cursor:pointer; padding:2px 4px; font-family:'Atkinson Hyperlegible', sans-serif;
+  }
+  .edit-form .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:0;}
+  .edit-form .field{margin-top:10px;}
+  .edit-form .field label{display:block; font-size:13px; color:var(--ink-soft); font-weight:700; margin-bottom:6px;}
+  .edit-form .field input{
+    width:100%; font-size:20px; font-weight:700; text-align:center; padding:10px 4px;
+    border-radius:10px; border:2px solid var(--line); color:var(--teal-dark);
+    font-family:'Atkinson Hyperlegible', sans-serif; background:#fbfdfc;
+  }
+  .edit-form .field input:focus{outline:none; border-color:var(--teal);}
+  .edit-ampm{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;}
+  .edit-ampm button{
+    border:2px solid var(--line); background:#fff; border-radius:10px; padding:10px 4px;
+    font-family:'Atkinson Hyperlegible', sans-serif; font-size:14px; font-weight:700; cursor:pointer; color:var(--ink);
+  }
+  .edit-ampm button.selected{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .edit-actions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .edit-actions button{
+    border:none; border-radius:12px; padding:12px; font-size:16px; font-weight:700;
+    font-family:'Atkinson Hyperlegible', sans-serif; cursor:pointer;
+  }
+  .edit-actions .save-edit{background:var(--teal); color:#fff;}
+  .edit-actions .cancel-edit{background:var(--bg); color:var(--ink-soft); border:2px solid var(--line);}
   .empty{
     text-align:center; color:var(--ink-soft); padding:24px 10px; font-size:15px;
   }
@@ -180,6 +206,8 @@
   const configNote = document.getElementById('configNote');
 
   let selectedPerson = null;
+  let currentReadings = [];
+  let editingRowId = null;
 
   if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
     configNote.style.display = 'block';
@@ -226,7 +254,9 @@
       const url = SCRIPT_URL + '?action=list&person=' + encodeURIComponent(selectedPerson) + '&month=' + encodeURIComponent(monthPick.value);
       const res = await fetch(url);
       const data = await res.json();
-      renderResults(data.readings || []);
+      currentReadings = data.readings || [];
+      editingRowId = null;
+      renderResults(currentReadings);
     } catch (err) {
       statusEl.textContent = 'Could not load history — check internet connection and try again.';
     } finally {
@@ -270,22 +300,125 @@
     readings.forEach(r => {
       const row = document.createElement('div');
       row.className = 'entry';
-      const tag = r.timeOfDay ? `<span class="tod">${r.timeOfDay}</span>` : '';
-      const fig = (val, cap) => {
-        const has = val !== '' && val !== undefined && val !== null;
-        return `<div class="figure"><div class="val${has ? '' : ' blank'}">${has ? val : '–'}</div><div class="cap">${cap}</div></div>`;
-      };
-      row.innerHTML = `
-        <div class="when">${fmtDate(r.date)} ${tag}</div>
-        <div class="figures">
-          ${fig(r.systolic, 'Upper')}
-          ${fig(r.diastolic, 'Lower')}
-          ${fig(r.pulse, 'Pulse')}
-          ${fig(r.weight, 'Weight kg')}
-        </div>
-      `;
+
+      if (r.rowId === editingRowId) {
+        row.appendChild(buildEditForm(r));
+      } else {
+        row.appendChild(buildDisplayView(r));
+      }
       resultsEl.appendChild(row);
     });
+  }
+
+  function buildDisplayView(r){
+    const wrap = document.createElement('div');
+    const tag = r.timeOfDay ? `<span class="tod">${r.timeOfDay}</span>` : '';
+    const fig = (val, cap) => {
+      const has = val !== '' && val !== undefined && val !== null;
+      return `<div class="figure"><div class="val${has ? '' : ' blank'}">${has ? val : '–'}</div><div class="cap">${cap}</div></div>`;
+    };
+    wrap.innerHTML = `
+      <div class="when" style="justify-content:space-between; display:flex;">
+        <span>${fmtDate(r.date)} ${tag}</span>
+        <button type="button" class="edit-link">Edit</button>
+      </div>
+      <div class="figures">
+        ${fig(r.systolic, 'Upper')}
+        ${fig(r.diastolic, 'Lower')}
+        ${fig(r.pulse, 'Pulse')}
+        ${fig(r.weight, 'Weight kg')}
+      </div>
+    `;
+    wrap.querySelector('.edit-link').addEventListener('click', () => {
+      editingRowId = r.rowId;
+      renderResults(currentReadings);
+    });
+    return wrap;
+  }
+
+  function buildEditForm(r){
+    const wrap = document.createElement('div');
+    wrap.className = 'edit-form';
+    wrap.innerHTML = `
+      <div class="when">${fmtDate(r.date)} — editing</div>
+      <div class="edit-ampm">
+        <button type="button" class="ampm-opt" data-val="AM">☀️ Morning</button>
+        <button type="button" class="ampm-opt" data-val="PM">🌙 Evening</button>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Upper</label><input type="number" inputmode="numeric" class="e-systolic" value="${r.systolic || ''}"></div>
+        <div class="field"><label>Lower</label><input type="number" inputmode="numeric" class="e-diastolic" value="${r.diastolic || ''}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Pulse</label><input type="number" inputmode="numeric" class="e-pulse" value="${r.pulse || ''}"></div>
+        <div class="field"><label>Weight kg</label><input type="number" inputmode="decimal" step="0.1" class="e-weight" value="${r.weight || ''}"></div>
+      </div>
+      <div class="edit-actions">
+        <button type="button" class="cancel-edit">Cancel</button>
+        <button type="button" class="save-edit">Save</button>
+      </div>
+    `;
+    const ampmBtns = wrap.querySelectorAll('.ampm-opt');
+    ampmBtns.forEach(b => {
+      if (b.dataset.val === r.timeOfDay) b.classList.add('selected');
+      b.addEventListener('click', () => {
+        ampmBtns.forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected');
+      });
+    });
+
+    wrap.querySelector('.cancel-edit').addEventListener('click', () => {
+      editingRowId = null;
+      renderResults(currentReadings);
+    });
+
+    wrap.querySelector('.save-edit').addEventListener('click', async () => {
+      const selectedAmpm = wrap.querySelector('.ampm-opt.selected');
+      const updated = {
+        rowId: r.rowId,
+        person: r.person,
+        timeOfDay: selectedAmpm ? selectedAmpm.dataset.val : (r.timeOfDay || ''),
+        systolic: wrap.querySelector('.e-systolic').value,
+        diastolic: wrap.querySelector('.e-diastolic').value,
+        pulse: wrap.querySelector('.e-pulse').value,
+        weight: wrap.querySelector('.e-weight').value
+      };
+
+      const hasBP = updated.systolic || updated.diastolic;
+      const hasBoth = updated.systolic && updated.diastolic;
+      if (hasBP && !hasBoth) {
+        alert('Please enter both Upper and Lower, or leave both blank.');
+        return;
+      }
+      if (!hasBoth && !updated.weight) {
+        alert('Please enter blood pressure, weight, or both.');
+        return;
+      }
+
+      const saveBtnEl = wrap.querySelector('.save-edit');
+      saveBtnEl.disabled = true;
+      saveBtnEl.textContent = 'Saving...';
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'update', ...updated })
+        });
+        // Optimistically update local copy since no-cors hides the real response
+        const idx = currentReadings.findIndex(x => x.rowId === r.rowId);
+        if (idx > -1) currentReadings[idx] = { ...currentReadings[idx], ...updated };
+        editingRowId = null;
+        renderResults(currentReadings);
+      } catch (err) {
+        alert('Could not save the edit — check internet connection and try again.');
+        saveBtnEl.disabled = false;
+        saveBtnEl.textContent = 'Save';
+      }
+    });
+
+    return wrap;
   }
 </script>
 </body>
