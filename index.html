@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Blood Pressure Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F1F6F4;
+    --card: #FFFFFF;
+    --ink: #163832;
+    --ink-soft: #4B6660;
+    --teal: #2F6259;
+    --teal-dark: #1E463F;
+    --dad: #2E5C8A;
+    --dad-tint: #E7EEF6;
+    --mum: #B34A5E;
+    --mum-tint: #F7E9EC;
+    --line: #DCE7E3;
+    --ok: #2F6259;
+    --shadow: 0 8px 24px rgba(22,56,50,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 16px 48px;
+  }
+  .wrap{width:100%;max-width:480px;}
+  .nav{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .nav a{
+    text-decoration:none;
+    font-weight:700;
+    font-size:14px;
+    color:var(--teal-dark);
+    background:#fff;
+    border:2px solid var(--line);
+    padding:8px 14px;
+    border-radius:999px;
+  }
+  .nav a.active{background:var(--teal); color:#fff; border-color:var(--teal);}
+  header{
+    text-align:center;
+    margin:8px 0 22px;
+  }
+  .eyebrow{
+    font-size:15px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-size:30px;
+    margin:6px 0 0;
+    font-weight:700;
+    color:var(--teal-dark);
+  }
+  .card{
+    background:var(--card);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    padding:22px;
+    margin-bottom:16px;
+    border:1px solid var(--line);
+  }
+  .label{
+    font-size:19px;
+    font-weight:700;
+    margin-bottom:12px;
+    color:var(--ink);
+  }
+  .who-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .who-btn{
+    border:3px solid var(--line);
+    background:#fff;
+    border-radius:16px;
+    padding:18px 8px;
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    font-size:24px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .15s ease;
+    color:var(--ink);
+  }
+  .who-btn.dad{color:var(--dad);}
+  .who-btn.mum{color:var(--mum);}
+  .who-btn.selected.dad{background:var(--dad-tint);border-color:var(--dad);}
+  .who-btn.selected.mum{background:var(--mum-tint);border-color:var(--mum);}
+  .ampm-btn{
+    border:3px solid var(--line);
+    background:#fff;
+    border-radius:16px;
+    padding:18px 8px;
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    font-size:20px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .15s ease;
+    color:var(--ink);
+  }
+  .ampm-btn.selected{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:16px;
+  }
+  .field label{
+    display:block;
+    font-size:16px;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .field input{
+    width:100%;
+    font-size:36px;
+    font-weight:700;
+    text-align:center;
+    padding:14px 6px;
+    border-radius:14px;
+    border:3px solid var(--line);
+    color:var(--teal-dark);
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    background:#fbfdfc;
+  }
+  .field input:focus{
+    outline:none;
+    border-color:var(--teal);
+    background:#fff;
+  }
+  .pulse-field{margin-top:14px;}
+  .pulse-field input{max-width:100%;}
+  .when{
+    margin-top:16px;
+    font-size:16px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+  .when strong{color:var(--ink);}
+  .save-btn{
+    width:100%;
+    margin-top:18px;
+    background:var(--teal);
+    color:#fff;
+    border:none;
+    border-radius:16px;
+    padding:20px;
+    font-size:24px;
+    font-weight:700;
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(47,98,89,0.35);
+  }
+  .save-btn:active{transform:translateY(1px);}
+  .save-btn:disabled{background:#9db8b2;box-shadow:none;}
+  .status{
+    text-align:center;
+    font-size:18px;
+    font-weight:700;
+    margin-top:14px;
+    min-height:26px;
+  }
+  .status.ok{color:var(--ok);}
+  .status.err{color:var(--mum);}
+  .setup-note{
+    background:#FFF6E9;
+    border:1px solid #F1D9A8;
+    color:#7A5A15;
+    border-radius:14px;
+    padding:14px 16px;
+    font-size:14px;
+    line-height:1.5;
+    margin-bottom:16px;
+  }
+  .footer-note{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13px;
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="index.html" class="active">Add Reading</a>
+    <a href="history.html">History</a>
+  </div>
+
+  <header>
+    <div class="eyebrow">Ghar ko Health Log</div>
+    <h1>Blood Pressure</h1>
+  </header>
+
+  <div id="configNote" class="setup-note" style="display:none;">
+    ⚠️ Not connected yet. Open this file and paste your Google Sheet link into
+    <code>SCRIPT_URL</code> near the top of the code — see SETUP-GUIDE.md.
+  </div>
+
+  <div class="card">
+    <div class="label">Who is this reading for?</div>
+    <div class="who-row">
+      <button type="button" class="who-btn dad" id="btnDad">👨 Ramesh</button>
+      <button type="button" class="who-btn mum" id="btnMum">👩 Raje</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Morning or evening?</div>
+    <div class="who-row">
+      <button type="button" class="ampm-btn" id="btnAM">☀️ Morning (AM)</button>
+      <button type="button" class="ampm-btn" id="btnPM">🌙 Evening (PM)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Blood pressure (optional)</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="systolic">Upper (Systolic)</label>
+        <input type="number" inputmode="numeric" id="systolic" placeholder="120" min="50" max="260">
+      </div>
+      <div class="field">
+        <label for="diastolic">Lower (Diastolic)</label>
+        <input type="number" inputmode="numeric" id="diastolic" placeholder="80" min="30" max="180">
+      </div>
+    </div>
+    <div class="field pulse-field">
+      <label for="pulse">Pulse (optional)</label>
+      <input type="number" inputmode="numeric" id="pulse" placeholder="72" min="30" max="220">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Weight (optional)</div>
+    <div class="field">
+      <label for="weight">Weight in kg</label>
+      <input type="number" inputmode="decimal" id="weight" placeholder="65" min="20" max="250" step="0.1">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="when">Saved with today's date &amp; time: <strong id="nowDisplay"></strong></div>
+    <button class="save-btn" id="saveBtn">Save</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="footer-note">Every reading goes straight into the family Google Sheet.</div>
+</div>
+
+<script>
+  // ---- SETUP: paste your Google Apps Script Web App URL below ----
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYjxRnJY1KlLPcBS7j-b69ODzmKfUa2QTIboh3OKSUAxUHHnwRMZ6ddiaT3P55IWoxAQ/exec";
+  // -------------------------------------------------------------
+
+  const btnDad = document.getElementById('btnDad');
+  const btnMum = document.getElementById('btnMum');
+  const btnAM = document.getElementById('btnAM');
+  const btnPM = document.getElementById('btnPM');
+  const saveBtn = document.getElementById('saveBtn');
+  const statusEl = document.getElementById('status');
+  const nowDisplay = document.getElementById('nowDisplay');
+  const configNote = document.getElementById('configNote');
+
+  let selectedPerson = null;
+  let selectedTimeOfDay = null;
+
+  if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
+    configNote.style.display = 'block';
+  }
+
+  function selectPerson(person, btn){
+    selectedPerson = person;
+    [btnDad, btnMum].forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+  btnDad.addEventListener('click', () => selectPerson('Ramesh', btnDad));
+  btnMum.addEventListener('click', () => selectPerson('Raje', btnMum));
+
+  function selectTimeOfDay(tod, btn){
+    selectedTimeOfDay = tod;
+    [btnAM, btnPM].forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+  btnAM.addEventListener('click', () => selectTimeOfDay('AM', btnAM));
+  btnPM.addEventListener('click', () => selectTimeOfDay('PM', btnPM));
+
+  // pre-select AM/PM based on current time, but they can still tap to change it
+  selectTimeOfDay(new Date().getHours() < 14 ? 'AM' : 'PM', new Date().getHours() < 14 ? btnAM : btnPM);
+
+  function formatNow(){
+    const d = new Date();
+    return d.toLocaleString(undefined, { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  nowDisplay.textContent = formatNow();
+  setInterval(() => nowDisplay.textContent = formatNow(), 30000);
+
+  saveBtn.addEventListener('click', async () => {
+    statusEl.textContent = '';
+    statusEl.className = 'status';
+
+    if (!selectedPerson) {
+      statusEl.textContent = 'Please choose Ramesh or Raje first.';
+      statusEl.classList.add('err');
+      return;
+    }
+    if (!selectedTimeOfDay) {
+      statusEl.textContent = 'Please choose Morning or Evening.';
+      statusEl.classList.add('err');
+      return;
+    }
+    const systolic = document.getElementById('systolic').value;
+    const diastolic = document.getElementById('diastolic').value;
+    const pulse = document.getElementById('pulse').value;
+    const weight = document.getElementById('weight').value;
+
+    const hasBP = systolic || diastolic;
+    const hasBoth = systolic && diastolic;
+
+    if (hasBP && !hasBoth) {
+      statusEl.textContent = 'Please enter both upper and lower numbers, or leave both blank.';
+      statusEl.classList.add('err');
+      return;
+    }
+    if (!hasBoth && !weight) {
+      statusEl.textContent = 'Please enter blood pressure, weight, or both.';
+      statusEl.classList.add('err');
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    const payload = {
+      person: selectedPerson,
+      timeOfDay: selectedTimeOfDay,
+      systolic: systolic || '',
+      diastolic: diastolic || '',
+      pulse: pulse || '',
+      weight: weight || '',
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
+        throw new Error('not-configured');
+      }
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+      // no-cors gives an opaque response, so we assume success if no network error was thrown
+      statusEl.textContent = '✅ Saved! Well done, ' + selectedPerson + '.';
+      statusEl.classList.add('ok');
+      document.getElementById('systolic').value = '';
+      document.getElementById('diastolic').value = '';
+      document.getElementById('pulse').value = '';
+      document.getElementById('weight').value = '';
+      [btnDad, btnMum].forEach(b => b.classList.remove('selected'));
+      selectedPerson = null;
+    } catch (err) {
+      if (err.message === 'not-configured') {
+        statusEl.textContent = 'App not connected to Google Sheet yet.';
+      } else {
+        statusEl.textContent = 'Could not save — check internet connection and try again.';
+      }
+      statusEl.classList.add('err');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+</script>
+</body>
+</html>
