@@ -106,18 +106,23 @@
 
   .entry{
     background:#fff; border:1px solid var(--line); border-radius:16px;
-    padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;
+    padding:14px 16px; margin-bottom:10px;
   }
-  .entry .when{font-size:14px; color:var(--ink-soft); font-weight:700; display:flex; align-items:center; gap:6px;}
+  .entry .when{font-size:14px; color:var(--ink-soft); font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:10px;}
   .entry .tod{
     font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
     background:var(--bg); border:1px solid var(--line); color:var(--teal-dark);
     border-radius:999px; padding:2px 8px;
   }
-  .entry .reading-group{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
-  .entry .reading{font-size:22px; font-weight:700; color:var(--teal-dark); font-family:'Fraunces', serif;}
-  .entry .reading.weight{font-size:17px; color:var(--ink-soft); font-family:'Atkinson Hyperlegible', sans-serif;}
-  .entry .pulse{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+  .entry .figures{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;
+  }
+  .entry .figure{
+    text-align:center; background:var(--bg); border-radius:10px; padding:8px 4px;
+  }
+  .entry .figure .val{font-size:19px; font-weight:700; color:var(--teal-dark); font-family:'Fraunces', serif;}
+  .entry .figure .val.blank{color:#B9C8C3;}
+  .entry .figure .cap{font-size:11px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-top:2px;}
   .empty{
     text-align:center; color:var(--ink-soft); padding:24px 10px; font-size:15px;
   }
@@ -266,15 +271,18 @@
       const row = document.createElement('div');
       row.className = 'entry';
       const tag = r.timeOfDay ? `<span class="tod">${r.timeOfDay}</span>` : '';
-      const readingParts = [];
-      if (r.systolic && r.diastolic) readingParts.push(`<div class="reading">${r.systolic}/${r.diastolic}</div>`);
-      if (r.weight) readingParts.push(`<div class="reading weight">${r.weight} kg</div>`);
+      const fig = (val, cap) => {
+        const has = val !== '' && val !== undefined && val !== null;
+        return `<div class="figure"><div class="val${has ? '' : ' blank'}">${has ? val : '–'}</div><div class="cap">${cap}</div></div>`;
+      };
       row.innerHTML = `
-        <div>
-          <div class="when">${fmtDate(r.date)} ${tag}</div>
-          ${r.pulse ? `<div class="pulse">Pulse ${r.pulse}</div>` : ''}
+        <div class="when">${fmtDate(r.date)} ${tag}</div>
+        <div class="figures">
+          ${fig(r.systolic, 'Upper')}
+          ${fig(r.diastolic, 'Lower')}
+          ${fig(r.pulse, 'Pulse')}
+          ${fig(r.weight, 'Weight kg')}
         </div>
-        <div class="reading-group">${readingParts.join('')}</div>
       `;
       resultsEl.appendChild(row);
     });
