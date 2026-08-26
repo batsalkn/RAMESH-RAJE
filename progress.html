@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Blood Pressure Progress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #F1F6F4;
+    --card: #FFFFFF;
+    --ink: #163832;
+    --ink-soft: #4B6660;
+    --teal: #2F6259;
+    --teal-dark: #1E463F;
+    --dad: #2E5C8A;
+    --dad-tint: #E7EEF6;
+    --mum: #B34A5E;
+    --mum-tint: #F7E9EC;
+    --line: #DCE7E3;
+    --good: #2F8A5B;
+    --good-tint: #E6F4EC;
+    --careful: #C68A1F;
+    --careful-tint: #FBF1DD;
+    --bad: #C0392B;
+    --bad-tint: #FAE7E4;
+    --shadow: 0 8px 24px rgba(22,56,50,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:20px 16px 48px;
+  }
+  .wrap{width:100%;max-width:480px;}
+  .nav{display:flex; justify-content:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+  .nav a{
+    text-decoration:none; font-weight:700; font-size:14px; color:var(--teal-dark);
+    background:#fff; border:2px solid var(--line); padding:8px 14px; border-radius:999px;
+  }
+  .nav a.active{background:var(--teal); color:#fff; border-color:var(--teal);}
+  header{text-align:center; margin:8px 0 20px;}
+  .eyebrow{font-size:15px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-soft); font-weight:700;}
+  h1{font-family:'Fraunces', serif; font-size:28px; margin:6px 0 0; font-weight:700; color:var(--teal-dark);}
+  .card{
+    background:var(--card); border-radius:20px; box-shadow:var(--shadow);
+    padding:22px; margin-bottom:16px; border:1px solid var(--line);
+  }
+  .label{font-size:19px; font-weight:700; margin-bottom:12px; color:var(--ink);}
+  .who-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .who-btn{
+    border:3px solid var(--line); background:#fff; border-radius:16px; padding:18px 8px;
+    font-family:'Atkinson Hyperlegible', sans-serif; font-size:22px; font-weight:700;
+    cursor:pointer; transition:all .15s ease; color:var(--ink);
+  }
+  .who-btn.dad{color:var(--dad);}
+  .who-btn.mum{color:var(--mum);}
+  .who-btn.selected.dad{background:var(--dad-tint); border-color:var(--dad);}
+  .who-btn.selected.mum{background:var(--mum-tint); border-color:var(--mum);}
+  .status{text-align:center; font-size:16px; font-weight:700; margin-top:12px; min-height:22px; color:var(--bad);}
+  .loading{text-align:center; color:var(--ink-soft); padding:20px; font-size:15px;}
+
+  .person-header{text-align:center; margin-bottom:2px;}
+  .person-header .name{font-family:'Fraunces', serif; font-size:24px; font-weight:700; color:var(--teal-dark);}
+  .person-header .meta{font-size:14px; color:var(--ink-soft); margin-top:2px;}
+
+  .remark-badge{
+    display:inline-block; padding:6px 16px; border-radius:999px; font-weight:700;
+    font-size:15px; margin-top:10px;
+  }
+  .remark-badge.good{background:var(--good-tint); color:var(--good);}
+  .remark-badge.careful{background:var(--careful-tint); color:var(--careful);}
+  .remark-badge.bad{background:var(--bad-tint); color:var(--bad);}
+
+  .latest-figure{text-align:center; margin-top:14px;}
+  .latest-figure .num{font-family:'Fraunces', serif; font-size:46px; font-weight:700; color:var(--teal-dark);}
+  .latest-figure .cap{font-size:13px; color:var(--ink-soft); font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+  .latest-figure .when{font-size:14px; color:var(--ink-soft); margin-top:4px;}
+
+  .trend-row{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    margin-top:14px; font-size:16px; font-weight:700;
+  }
+  .trend-row.up{color:var(--bad);}
+  .trend-row.down{color:var(--good);}
+  .trend-row.flat{color:var(--ink-soft);}
+
+  .mini-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;}
+  .mini-grid .box{background:var(--bg); border-radius:14px; padding:12px; text-align:center;}
+  .mini-grid .box .num{font-size:20px; font-weight:700; color:var(--teal-dark); font-family:'Fraunces', serif;}
+  .mini-grid .box .cap{font-size:12px; color:var(--ink-soft); font-weight:700; margin-top:2px;}
+
+  .chart-title{font-size:16px; font-weight:700; color:var(--ink); margin-bottom:10px;}
+  .chart-wrap{position:relative; height:220px;}
+  .empty{text-align:center; color:var(--ink-soft); padding:24px 10px; font-size:15px;}
+  .footnote{font-size:12px; color:var(--ink-soft); line-height:1.5; margin-top:8px; text-align:center;}
+  .setup-note{
+    background:#FFF6E9; border:1px solid #F1D9A8; color:#7A5A15; border-radius:14px;
+    padding:14px 16px; font-size:14px; line-height:1.5; margin-bottom:16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="index.html">Add Reading</a>
+    <a href="history.html">History</a>
+    <a href="progress.html" class="active">Progress</a>
+  </div>
+
+  <header>
+    <div class="eyebrow">Ghar ko Health Log</div>
+    <h1>Progress Report</h1>
+  </header>
+
+  <div id="configNote" class="setup-note" style="display:none;">
+    ⚠️ Not connected yet. Paste your Google Sheet link into <code>SCRIPT_URL</code>
+    near the top of this page's code — see SETUP-GUIDE.md.
+  </div>
+
+  <div class="card">
+    <div class="label">Whose progress?</div>
+    <div class="who-row">
+      <button type="button" class="who-btn dad" id="btnDad">👨 Ramesh</button>
+      <button type="button" class="who-btn mum" id="btnMum">👩 Raje</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+  // ---- SETUP: same Google Apps Script Web App URL as the other pages ----
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzYjxRnJY1KlLPcBS7j-b69ODzmKfUa2QTIboh3OKSUAxUHHnwRMZ6ddiaT3P55IWoxAQ/exec";
+  // -------------------------------------------------------------------
+
+  // Family details used only to show age/BMI context — nothing here is sent anywhere.
+  const PEOPLE = {
+    Ramesh: { label: '👨 Ramesh', dob: '1964-10-07', heightCm: 160, tint: 'dad' },
+    Raje:   { label: '👩 Raje',   dob: '1971-02-02', heightCm: 158, tint: 'mum' }
+  };
+
+  const btnDad = document.getElementById('btnDad');
+  const btnMum = document.getElementById('btnMum');
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+  const configNote = document.getElementById('configNote');
+  let chartInstance = null;
+  let weightChartInstance = null;
+
+  if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
+    configNote.style.display = 'block';
+  }
+
+  btnDad.addEventListener('click', () => loadPerson('Ramesh', btnDad));
+  btnMum.addEventListener('click', () => loadPerson('Raje', btnMum));
+
+  function calcAge(dobStr){
+    const dob = new Date(dobStr + 'T00:00:00');
+    const now = new Date();
+    let age = now.getFullYear() - dob.getFullYear();
+    const m = now.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+    return age;
+  }
+
+  function fmtDate(dateStr){
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+  }
+
+  // Standard adult blood pressure categories (AHA), for general reference only —
+  // not a diagnosis. Always encourage checking with a doctor for real concerns.
+  function bpRemark(sys, dia){
+    if (sys >= 180 || dia >= 120) return { level: 'bad', text: 'Very high — see a doctor soon', category: 'Hypertensive crisis' };
+    if (sys >= 140 || dia >= 90) return { level: 'bad', text: 'Bad — consider seeing a doctor', category: 'High (Stage 2)' };
+    if (sys >= 130 || dia >= 85) return { level: 'careful', text: 'Be careful — a little high', category: sys >= 130 ? 'High (Stage 1)' : 'Elevated' };
+    if (sys >= 120) return { level: 'careful', text: 'Be careful — slightly elevated', category: 'Elevated' };
+    return { level: 'good', text: 'Good — within normal range', category: 'Normal' };
+  }
+
+  // Asian-population BMI reference bands (WHO), commonly used for South/East Asian adults.
+  function bmiRemark(bmi){
+    if (bmi < 18.5) return { level: 'careful', text: 'Underweight', category: 'Underweight' };
+    if (bmi < 23) return { level: 'good', text: 'Good — healthy range', category: 'Normal' };
+    if (bmi < 25) return { level: 'careful', text: 'Be careful — overweight range', category: 'Overweight' };
+    return { level: 'bad', text: 'Bad — obese range', category: 'Obese' };
+  }
+
+  async function loadPerson(person, btn){
+    [btnDad, btnMum].forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    statusEl.textContent = '';
+    resultsEl.innerHTML = '<div class="loading">Loading…</div>';
+
+    if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
+      resultsEl.innerHTML = '';
+      statusEl.textContent = 'App not connected to Google Sheet yet.';
+      return;
+    }
+
+    try {
+      const url = SCRIPT_URL + '?action=list&person=' + encodeURIComponent(person);
+      const res = await fetch(url);
+      const data = await res.json();
+      renderProgress(person, data.readings || []);
+    } catch (err) {
+      resultsEl.innerHTML = '';
+      statusEl.textContent = 'Could not load progress — check internet connection and try again.';
+    }
+  }
+
+  function renderProgress(person, readings){
+    resultsEl.innerHTML = '';
+    const info = PEOPLE[person];
+    const age = calcAge(info.dob);
+
+    // sort ascending by date+time
+    readings.sort((a, b) => (a.date + a.time) > (b.date + b.time) ? 1 : -1);
+    const bpReadings = readings.filter(r => r.systolic && r.diastolic);
+    const weightReadings = readings.filter(r => r.weight);
+
+    if (!bpReadings.length && !weightReadings.length) {
+      resultsEl.innerHTML = `
+        <div class="card">
+          <div class="person-header">
+            <div class="name">${info.label}</div>
+            <div class="meta">Age ${age} · ${info.heightCm} cm</div>
+          </div>
+          <div class="empty">No readings logged yet for ${person}.</div>
+        </div>`;
+      return;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    let latestBlock = '';
+    if (bpReadings.length) {
+      const latest = bpReadings[bpReadings.length - 1];
+      const prev = bpReadings.length > 1 ? bpReadings[bpReadings.length - 2] : null;
+      const remark = bpRemark(Number(latest.systolic), Number(latest.diastolic));
+
+      let trendHTML = '';
+      if (prev) {
+        const diff = Number(latest.systolic) - Number(prev.systolic);
+        let dir = 'flat', arrow = '→', word = 'Holding steady';
+        if (diff > 2) { dir = 'up'; arrow = '↑'; word = 'Going up since last reading'; }
+        else if (diff < -2) { dir = 'down'; arrow = '↓'; word = 'Going down since last reading'; }
+        trendHTML = `<div class="trend-row ${dir}"><span>${arrow}</span><span>${word}</span></div>`;
+      }
+
+      latestBlock = `
+        <div class="latest-figure">
+          <div class="num">${latest.systolic}/${latest.diastolic}</div>
+          <div class="cap">Latest Blood Pressure${latest.timeOfDay ? ' · ' + latest.timeOfDay : ''}</div>
+          <div class="when">${fmtDate(latest.date)}</div>
+          <div class="remark-badge ${remark.level}">${remark.text}</div>
+        </div>
+        ${trendHTML}
+      `;
+    }
+
+    let bmiBlock = '';
+    if (weightReadings.length) {
+      const latestW = weightReadings[weightReadings.length - 1];
+      const heightM = info.heightCm / 100;
+      const bmi = Number(latestW.weight) / (heightM * heightM);
+      const bRemark = bmiRemark(bmi);
+      bmiBlock = `
+        <div class="mini-grid">
+          <div class="box"><div class="num">${latestW.weight} kg</div><div class="cap">Latest Weight</div></div>
+          <div class="box"><div class="num">${bmi.toFixed(1)}</div><div class="cap">BMI · ${bRemark.category}</div></div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="person-header">
+        <div class="name">${info.label}</div>
+        <div class="meta">Age ${age} · ${info.heightCm} cm</div>
+      </div>
+      ${latestBlock}
+      ${bmiBlock}
+      <div class="footnote">General reference ranges only, not a medical diagnosis. Please check with a doctor about any reading that concerns you.</div>
+    `;
+    resultsEl.appendChild(card);
+
+    if (bpReadings.length >= 2) {
+      const chartCard = document.createElement('div');
+      chartCard.className = 'card';
+      chartCard.innerHTML = `
+        <div class="chart-title">Blood Pressure Trend</div>
+        <div class="chart-wrap"><canvas id="bpChart"></canvas></div>
+      `;
+      resultsEl.appendChild(chartCard);
+      drawBPChart(bpReadings);
+    }
+
+    if (weightReadings.length >= 2) {
+      const wChartCard = document.createElement('div');
+      wChartCard.className = 'card';
+      wChartCard.innerHTML = `
+        <div class="chart-title">Weight Trend</div>
+        <div class="chart-wrap"><canvas id="weightChart"></canvas></div>
+      `;
+      resultsEl.appendChild(wChartCard);
+      drawWeightChart(weightReadings);
+    }
+  }
+
+  function drawBPChart(bpReadings){
+    if (chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('bpChart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: bpReadings.map(r => fmtDate(r.date)),
+        datasets: [
+          {
+            label: 'Upper',
+            data: bpReadings.map(r => Number(r.systolic)),
+            borderColor: '#2F6259',
+            backgroundColor: '#2F6259',
+            tension: 0.25,
+            pointRadius: 3
+          },
+          {
+            label: 'Lower',
+            data: bpReadings.map(r => Number(r.diastolic)),
+            borderColor: '#B34A5E',
+            backgroundColor: '#B34A5E',
+            tension: 0.25,
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { title: { display: true, text: 'mmHg' } } }
+      }
+    });
+  }
+
+  function drawWeightChart(weightReadings){
+    if (weightChartInstance) weightChartInstance.destroy();
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    weightChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: weightReadings.map(r => fmtDate(r.date)),
+        datasets: [{
+          label: 'Weight (kg)',
+          data: weightReadings.map(r => Number(r.weight)),
+          borderColor: '#2E5C8A',
+          backgroundColor: '#2E5C8A',
+          tension: 0.25,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { title: { display: true, text: 'kg' } } }
+      }
+    });
+  }
+</script>
+</body>
+</html>
