@@ -176,21 +176,22 @@
   }
 
   // Standard adult blood pressure categories (AHA), for general reference only —
-  // not a diagnosis. Always encourage checking with a doctor for real concerns.
+  // not a diagnosis. Wording is kept gentle; only a genuinely urgent reading
+  // suggests mentioning it to a doctor.
   function bpRemark(sys, dia){
-    if (sys >= 180 || dia >= 120) return { level: 'bad', text: 'Very high — see a doctor soon', category: 'Hypertensive crisis' };
-    if (sys >= 140 || dia >= 90) return { level: 'bad', text: 'Bad — consider seeing a doctor', category: 'High (Stage 2)' };
-    if (sys >= 130 || dia >= 85) return { level: 'careful', text: 'Be careful — a little high', category: sys >= 130 ? 'High (Stage 1)' : 'Elevated' };
-    if (sys >= 120) return { level: 'careful', text: 'Be careful — slightly elevated', category: 'Elevated' };
-    return { level: 'good', text: 'Good — within normal range', category: 'Normal' };
+    if (sys >= 180 || dia >= 120) return { level: 'bad', text: 'Quite high today — worth telling their doctor', category: 'Very high' };
+    if (sys >= 140 || dia >= 90) return { level: 'bad', text: 'Not so good — keep an eye on it', category: 'High' };
+    if (sys >= 130 || dia >= 85) return { level: 'careful', text: 'Doing okay — a little on the high side', category: 'Slightly high' };
+    if (sys >= 120) return { level: 'careful', text: 'Doing okay — a little on the high side', category: 'Slightly high' };
+    return { level: 'good', text: 'Good — nice and steady', category: 'Normal' };
   }
 
   // Asian-population BMI reference bands (WHO), commonly used for South/East Asian adults.
   function bmiRemark(bmi){
-    if (bmi < 18.5) return { level: 'careful', text: 'Underweight', category: 'Underweight' };
+    if (bmi < 18.5) return { level: 'careful', text: 'On the lighter side', category: 'Underweight' };
     if (bmi < 23) return { level: 'good', text: 'Good — healthy range', category: 'Normal' };
-    if (bmi < 25) return { level: 'careful', text: 'Be careful — overweight range', category: 'Overweight' };
-    return { level: 'bad', text: 'Bad — obese range', category: 'Obese' };
+    if (bmi < 25) return { level: 'careful', text: 'Doing okay — a little above range', category: 'A little high' };
+    return { level: 'bad', text: 'Not so good — above healthy range', category: 'Above range' };
   }
 
   async function loadPerson(person, btn){
@@ -250,9 +251,9 @@
       let trendHTML = '';
       if (prev) {
         const diff = Number(latest.systolic) - Number(prev.systolic);
-        let dir = 'flat', arrow = '→', word = 'Holding steady';
-        if (diff > 2) { dir = 'up'; arrow = '↑'; word = 'Going up since last reading'; }
-        else if (diff < -2) { dir = 'down'; arrow = '↓'; word = 'Going down since last reading'; }
+        let dir = 'flat', arrow = '→', word = 'Steady';
+        if (diff > 2) { dir = 'up'; arrow = '↑'; word = 'A bit higher than last time'; }
+        else if (diff < -2) { dir = 'down'; arrow = '↓'; word = 'A bit lower than last time'; }
         trendHTML = `<div class="trend-row ${dir}"><span>${arrow}</span><span>${word}</span></div>`;
       }
 
@@ -288,7 +289,7 @@
       </div>
       ${latestBlock}
       ${bmiBlock}
-      <div class="footnote">General reference ranges only, not a medical diagnosis. Please check with a doctor about any reading that concerns you.</div>
+      <div class="footnote">These are general reference ranges to help you keep an eye on things, not a medical diagnosis.</div>
     `;
     resultsEl.appendChild(card);
 
