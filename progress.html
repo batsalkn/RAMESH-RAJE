@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="i18n.js" defer></script>
 <style>
   :root{
     --bg: #F1F6F4;
@@ -35,9 +36,26 @@
     background:var(--bg); color:var(--ink);
     font-family:'Atkinson Hyperlegible', system-ui, sans-serif;
     min-height:100vh; display:flex; flex-direction:column; align-items:center;
-    padding:20px 16px 48px;
+    padding:20px 16px 80px;
   }
-  .wrap{width:100%;max-width:480px;}
+  .wrap{width:100%;max-width:480px; position:relative;}
+  .lang-toggle{
+    position:fixed; bottom:16px; right:16px; z-index:20;
+    width:148px; height:44px; box-sizing:border-box;
+    background:#fff; border:2px solid var(--line); border-radius:999px;
+    padding:4px; box-shadow:var(--shadow);
+  }
+  .lang-slider{
+    position:absolute; top:4px; left:4px; width:66px; height:34px;
+    background:var(--teal); border-radius:999px; transition:transform .25s ease;
+  }
+  .lang-opt-row{position:relative; z-index:1; display:flex; height:100%;}
+  .lang-opt{
+    flex:1; border:none; background:transparent; cursor:pointer;
+    font-family:'Atkinson Hyperlegible', sans-serif; font-weight:700; font-size:14px;
+    color:var(--ink-soft);
+  }
+  .lang-opt.active{color:#fff;}
   .nav{display:flex; justify-content:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
   .nav a{
     text-decoration:none; font-weight:700; font-size:14px; color:var(--teal-dark);
@@ -106,16 +124,23 @@
 </style>
 </head>
 <body>
+<div class="lang-toggle" id="langToggle">
+  <div class="lang-slider" id="langSlider"></div>
+  <div class="lang-opt-row">
+    <button type="button" class="lang-opt" data-lang="en" onclick="setLang('en')">EN</button>
+    <button type="button" class="lang-opt" data-lang="np" onclick="setLang('np')">ने</button>
+  </div>
+</div>
 <div class="wrap">
   <div class="nav">
-    <a href="index.html">Add Reading</a>
-    <a href="history.html">History</a>
-    <a href="progress.html" class="active">Progress</a>
+    <a href="index.html" data-i18n="nav_add">Add Reading</a>
+    <a href="history.html" data-i18n="nav_history">History</a>
+    <a href="progress.html" class="active" data-i18n="nav_progress">Progress</a>
   </div>
 
   <header>
-    <div class="eyebrow">Ghar ko Health Log</div>
-    <h1>Progress Report</h1>
+    <div class="eyebrow" data-i18n="eyebrow">Ghar ko Health Log</div>
+    <h1 data-i18n="title_progress">Progress Report</h1>
   </header>
 
   <div id="configNote" class="setup-note" style="display:none;">
@@ -124,7 +149,7 @@
   </div>
 
   <div class="card">
-    <div class="label">Whose progress?</div>
+    <div class="label" data-i18n="whose_progress">Whose progress?</div>
     <div class="who-row">
       <button type="button" class="who-btn dad" id="btnDad">👨 Ramesh</button>
       <button type="button" class="who-btn mum" id="btnMum">👩 Raje</button>
@@ -161,6 +186,9 @@
   btnDad.addEventListener('click', () => loadPerson('Ramesh', btnDad));
   btnMum.addEventListener('click', () => loadPerson('Raje', btnMum));
 
+  let lastPerson = null;
+  let lastReadings = null;
+
   function calcAge(dobStr){
     const dob = new Date(dobStr + 'T00:00:00');
     const now = new Date();
@@ -172,37 +200,36 @@
 
   function fmtDate(dateStr){
     const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+    return d.toLocaleDateString(getLang() === 'np' ? 'ne-NP' : undefined, { month:'short', day:'numeric' });
   }
 
   // Standard adult blood pressure categories (AHA), for general reference only —
   // not a diagnosis. Wording is kept gentle; only a genuinely urgent reading
   // suggests mentioning it to a doctor.
   function bpRemark(sys, dia){
-    if (sys >= 180 || dia >= 120) return { level: 'bad', text: 'Quite high today — worth telling their doctor', category: 'Very high' };
-    if (sys >= 140 || dia >= 90) return { level: 'bad', text: 'Not so good — keep an eye on it', category: 'High' };
-    if (sys >= 130 || dia >= 85) return { level: 'careful', text: 'Doing okay — a little on the high side', category: 'Slightly high' };
-    if (sys >= 120) return { level: 'careful', text: 'Doing okay — a little on the high side', category: 'Slightly high' };
-    return { level: 'good', text: 'Good — nice and steady', category: 'Normal' };
+    if (sys >= 180 || dia >= 120) return { level: 'bad', text: t('remark_very_high') };
+    if (sys >= 140 || dia >= 90) return { level: 'bad', text: t('remark_not_good') };
+    if (sys >= 120) return { level: 'careful', text: t('remark_slightly_high') };
+    return { level: 'good', text: t('remark_good') };
   }
 
   // Asian-population BMI reference bands (WHO), commonly used for South/East Asian adults.
   function bmiRemark(bmi){
-    if (bmi < 18.5) return { level: 'careful', text: 'On the lighter side', category: 'Underweight' };
-    if (bmi < 23) return { level: 'good', text: 'Good — healthy range', category: 'Normal' };
-    if (bmi < 25) return { level: 'careful', text: 'Doing okay — a little above range', category: 'A little high' };
-    return { level: 'bad', text: 'Not so good — above healthy range', category: 'Above range' };
+    if (bmi < 18.5) return { level: 'careful', text: t('bmi_underweight') };
+    if (bmi < 23) return { level: 'good', text: t('bmi_good') };
+    if (bmi < 25) return { level: 'careful', text: t('bmi_high_ok') };
+    return { level: 'bad', text: t('bmi_not_good') };
   }
 
   async function loadPerson(person, btn){
     [btnDad, btnMum].forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     statusEl.textContent = '';
-    resultsEl.innerHTML = '<div class="loading">Loading…</div>';
+    resultsEl.innerHTML = `<div class="loading">${t('loading_text')}</div>`;
 
     if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
       resultsEl.innerHTML = '';
-      statusEl.textContent = 'App not connected to Google Sheet yet.';
+      statusEl.textContent = t('err_not_connected');
       return;
     }
 
@@ -210,12 +237,18 @@
       const url = SCRIPT_URL + '?action=list&person=' + encodeURIComponent(person);
       const res = await fetch(url);
       const data = await res.json();
-      renderProgress(person, data.readings || []);
+      lastPerson = person;
+      lastReadings = data.readings || [];
+      renderProgress(person, lastReadings);
     } catch (err) {
       resultsEl.innerHTML = '';
-      statusEl.textContent = 'Could not load progress — check internet connection and try again.';
+      statusEl.textContent = t('err_load_progress');
     }
   }
+
+  window.onLangChange = () => {
+    if (lastPerson) renderProgress(lastPerson, lastReadings);
+  };
 
   function renderProgress(person, readings){
     resultsEl.innerHTML = '';
