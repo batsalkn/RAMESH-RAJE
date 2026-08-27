@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<script src="i18n.js" defer></script>
 <style>
   :root{
     --bg: #F1F6F4;
@@ -33,9 +34,26 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:20px 16px 48px;
+    padding:20px 16px 80px;
   }
-  .wrap{width:100%;max-width:480px;}
+  .wrap{width:100%;max-width:480px; position:relative;}
+  .lang-toggle{
+    position:fixed; bottom:16px; right:16px; z-index:20;
+    width:148px; height:44px; box-sizing:border-box;
+    background:#fff; border:2px solid var(--line); border-radius:999px;
+    padding:4px; box-shadow:var(--shadow);
+  }
+  .lang-slider{
+    position:absolute; top:4px; left:4px; width:66px; height:34px;
+    background:var(--teal); border-radius:999px; transition:transform .25s ease;
+  }
+  .lang-opt-row{position:relative; z-index:1; display:flex; height:100%;}
+  .lang-opt{
+    flex:1; border:none; background:transparent; cursor:pointer;
+    font-family:'Atkinson Hyperlegible', sans-serif; font-weight:700; font-size:14px;
+    color:var(--ink-soft);
+  }
+  .lang-opt.active{color:#fff;}
   .nav{
     display:flex;
     justify-content:center;
@@ -202,16 +220,23 @@
 </style>
 </head>
 <body>
+<div class="lang-toggle" id="langToggle">
+  <div class="lang-slider" id="langSlider"></div>
+  <div class="lang-opt-row">
+    <button type="button" class="lang-opt" data-lang="en" onclick="setLang('en')">EN</button>
+    <button type="button" class="lang-opt" data-lang="np" onclick="setLang('np')">ने</button>
+  </div>
+</div>
 <div class="wrap">
   <div class="nav">
-    <a href="index.html" class="active">Add Reading</a>
-    <a href="history.html">History</a>
-    <a href="progress.html">Progress</a>
+    <a href="index.html" class="active" data-i18n="nav_add">Add Reading</a>
+    <a href="history.html" data-i18n="nav_history">History</a>
+    <a href="progress.html" data-i18n="nav_progress">Progress</a>
   </div>
 
   <header>
-    <div class="eyebrow">Ghar ko Health Log</div>
-    <h1>Blood Pressure</h1>
+    <div class="eyebrow" data-i18n="eyebrow">Ghar ko Health Log</div>
+    <h1 data-i18n="title_bp">Blood Pressure</h1>
   </header>
 
   <div id="configNote" class="setup-note" style="display:none;">
@@ -220,7 +245,7 @@
   </div>
 
   <div class="card">
-    <div class="label">Who is this reading for?</div>
+    <div class="label" data-i18n="who_label">Who is this reading for?</div>
     <div class="who-row">
       <button type="button" class="who-btn dad" id="btnDad">👨 Ramesh</button>
       <button type="button" class="who-btn mum" id="btnMum">👩 Raje</button>
@@ -228,46 +253,46 @@
   </div>
 
   <div class="card">
-    <div class="label">Morning or evening?</div>
+    <div class="label" data-i18n="ampm_label">Morning or evening?</div>
     <div class="who-row">
-      <button type="button" class="ampm-btn" id="btnAM">☀️ Morning (AM)</button>
-      <button type="button" class="ampm-btn" id="btnPM">🌙 Evening (PM)</button>
+      <button type="button" class="ampm-btn" id="btnAM" data-i18n="am_btn">☀️ Morning (AM)</button>
+      <button type="button" class="ampm-btn" id="btnPM" data-i18n="pm_btn">🌙 Evening (PM)</button>
     </div>
   </div>
 
   <div class="card">
-    <div class="label">Blood pressure (optional)</div>
+    <div class="label" data-i18n="bp_card_label">Blood pressure (optional)</div>
     <div class="field-row">
       <div class="field">
-        <label for="systolic">Upper (Systolic)</label>
+        <label for="systolic" data-i18n="systolic_label">Upper (Systolic)</label>
         <input type="number" inputmode="numeric" id="systolic" placeholder="120" min="50" max="260">
       </div>
       <div class="field">
-        <label for="diastolic">Lower (Diastolic)</label>
+        <label for="diastolic" data-i18n="diastolic_label">Lower (Diastolic)</label>
         <input type="number" inputmode="numeric" id="diastolic" placeholder="80" min="30" max="180">
       </div>
     </div>
     <div class="field pulse-field">
-      <label for="pulse">Pulse (optional)</label>
+      <label for="pulse" data-i18n="pulse_label">Pulse (optional)</label>
       <input type="number" inputmode="numeric" id="pulse" placeholder="72" min="30" max="220">
     </div>
   </div>
 
   <div class="card">
-    <div class="label">Weight (optional)</div>
+    <div class="label" data-i18n="weight_card_label">Weight (optional)</div>
     <div class="field">
-      <label for="weight">Weight in kg</label>
+      <label for="weight" data-i18n="weight_label">Weight in kg</label>
       <input type="number" inputmode="decimal" id="weight" placeholder="65" min="20" max="250" step="0.1">
     </div>
   </div>
 
   <div class="card">
-    <div class="when">Saved with today's date &amp; time: <strong id="nowDisplay"></strong></div>
-    <button class="save-btn" id="saveBtn">Save</button>
+    <div class="when"><span data-i18n="when_prefix">Saved with today's date &amp; time:</span> <strong id="nowDisplay"></strong></div>
+    <button class="save-btn" id="saveBtn" data-i18n="save_btn">Save</button>
     <div class="status" id="status"></div>
   </div>
 
-  <div class="footer-note">Every reading goes straight into the family Google Sheet.</div>
+  <div class="footer-note" data-i18n="footer_note">Every reading goes straight into the family Google Sheet.</div>
 </div>
 
 <script>
@@ -312,22 +337,23 @@
 
   function formatNow(){
     const d = new Date();
-    return d.toLocaleString(undefined, { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    return d.toLocaleString(getLang() === 'np' ? 'ne-NP' : undefined, { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   }
   nowDisplay.textContent = formatNow();
   setInterval(() => nowDisplay.textContent = formatNow(), 30000);
+  window.onLangChange = () => { nowDisplay.textContent = formatNow(); };
 
   saveBtn.addEventListener('click', async () => {
     statusEl.textContent = '';
     statusEl.className = 'status';
 
     if (!selectedPerson) {
-      statusEl.textContent = 'Please choose Ramesh or Raje first.';
+      statusEl.textContent = t('err_choose_person');
       statusEl.classList.add('err');
       return;
     }
     if (!selectedTimeOfDay) {
-      statusEl.textContent = 'Please choose Morning or Evening.';
+      statusEl.textContent = t('err_choose_tod');
       statusEl.classList.add('err');
       return;
     }
@@ -340,18 +366,18 @@
     const hasBoth = systolic && diastolic;
 
     if (hasBP && !hasBoth) {
-      statusEl.textContent = 'Please enter both upper and lower numbers, or leave both blank.';
+      statusEl.textContent = t('err_bp_both');
       statusEl.classList.add('err');
       return;
     }
     if (!hasBoth && !weight) {
-      statusEl.textContent = 'Please enter blood pressure, weight, or both.';
+      statusEl.textContent = t('err_need_one');
       statusEl.classList.add('err');
       return;
     }
 
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
+    saveBtn.textContent = t('saving_btn');
 
     const payload = {
       person: selectedPerson,
@@ -374,7 +400,7 @@
         body: JSON.stringify(payload)
       });
       // no-cors gives an opaque response, so we assume success if no network error was thrown
-      statusEl.textContent = '✅ Saved! Well done, ' + selectedPerson + '.';
+      statusEl.textContent = t('saved_ok').replace('{name}', selectedPerson);
       statusEl.classList.add('ok');
       document.getElementById('systolic').value = '';
       document.getElementById('diastolic').value = '';
@@ -384,14 +410,14 @@
       selectedPerson = null;
     } catch (err) {
       if (err.message === 'not-configured') {
-        statusEl.textContent = 'App not connected to Google Sheet yet.';
+        statusEl.textContent = t('err_not_connected');
       } else {
-        statusEl.textContent = 'Could not save — check internet connection and try again.';
+        statusEl.textContent = t('err_save_fail');
       }
       statusEl.classList.add('err');
     } finally {
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save';
+      saveBtn.textContent = t('save_btn');
     }
   });
 </script>
