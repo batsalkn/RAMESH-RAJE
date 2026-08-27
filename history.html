@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<script src="i18n.js" defer></script>
 <style>
   :root{
     --bg: #F1F6F4;
@@ -33,9 +34,26 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:20px 16px 48px;
+    padding:20px 16px 80px;
   }
-  .wrap{width:100%;max-width:480px;}
+  .wrap{width:100%;max-width:480px; position:relative;}
+  .lang-toggle{
+    position:fixed; bottom:16px; right:16px; z-index:20;
+    width:148px; height:44px; box-sizing:border-box;
+    background:#fff; border:2px solid var(--line); border-radius:999px;
+    padding:4px; box-shadow:var(--shadow);
+  }
+  .lang-slider{
+    position:absolute; top:4px; left:4px; width:66px; height:34px;
+    background:var(--teal); border-radius:999px; transition:transform .25s ease;
+  }
+  .lang-opt-row{position:relative; z-index:1; display:flex; height:100%;}
+  .lang-opt{
+    flex:1; border:none; background:transparent; cursor:pointer;
+    font-family:'Atkinson Hyperlegible', sans-serif; font-weight:700; font-size:14px;
+    color:var(--ink-soft);
+  }
+  .lang-opt.active{color:#fff;}
   .nav{
     display:flex;
     justify-content:center;
@@ -159,16 +177,23 @@
 </style>
 </head>
 <body>
+<div class="lang-toggle" id="langToggle">
+  <div class="lang-slider" id="langSlider"></div>
+  <div class="lang-opt-row">
+    <button type="button" class="lang-opt" data-lang="en" onclick="setLang('en')">EN</button>
+    <button type="button" class="lang-opt" data-lang="np" onclick="setLang('np')">ने</button>
+  </div>
+</div>
 <div class="wrap">
   <div class="nav">
-    <a href="index.html">Add Reading</a>
-    <a href="history.html" class="active">History</a>
-    <a href="progress.html">Progress</a>
+    <a href="index.html" data-i18n="nav_add">Add Reading</a>
+    <a href="history.html" class="active" data-i18n="nav_history">History</a>
+    <a href="progress.html" data-i18n="nav_progress">Progress</a>
   </div>
 
   <header>
-    <div class="eyebrow">Ghar ko Health Log</div>
-    <h1>History</h1>
+    <div class="eyebrow" data-i18n="eyebrow">Ghar ko Health Log</div>
+    <h1 data-i18n="nav_history">History</h1>
   </header>
 
   <div id="configNote" class="setup-note" style="display:none;">
@@ -177,16 +202,16 @@
   </div>
 
   <div class="card">
-    <div class="label">Whose history?</div>
+    <div class="label" data-i18n="whose_history">Whose history?</div>
     <div class="who-row">
       <button type="button" class="who-btn dad" id="btnDad">👨 Ramesh</button>
       <button type="button" class="who-btn mum" id="btnMum">👩 Raje</button>
     </div>
     <div class="month-field">
-      <label for="monthPick">Which month?</label>
+      <label for="monthPick" data-i18n="which_month">Which month?</label>
       <input type="month" id="monthPick">
     </div>
-    <button class="go-btn" id="goBtn">Show History</button>
+    <button class="go-btn" id="goBtn" data-i18n="show_history_btn">Show History</button>
     <div class="status" id="status"></div>
   </div>
 
@@ -228,7 +253,7 @@
 
   function fmtDate(dateStr){
     const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+    return d.toLocaleDateString(getLang() === 'np' ? 'ne-NP' : undefined, { weekday:'short', month:'short', day:'numeric' });
   }
 
   goBtn.addEventListener('click', async () => {
@@ -236,20 +261,20 @@
     resultsEl.innerHTML = '';
 
     if (!selectedPerson) {
-      statusEl.textContent = 'Please choose Ramesh or Raje first.';
+      statusEl.textContent = t('err_choose_person');
       return;
     }
     if (!monthPick.value) {
-      statusEl.textContent = 'Please choose a month.';
+      statusEl.textContent = t('err_choose_month');
       return;
     }
     if (!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
-      statusEl.textContent = 'App not connected to Google Sheet yet.';
+      statusEl.textContent = t('err_not_connected');
       return;
     }
 
     goBtn.disabled = true;
-    goBtn.textContent = 'Loading...';
+    goBtn.textContent = t('loading_btn');
 
     try {
       const url = SCRIPT_URL + '?action=list&person=' + encodeURIComponent(selectedPerson) + '&month=' + encodeURIComponent(monthPick.value);
@@ -259,18 +284,22 @@
       editingRowId = null;
       renderResults(currentReadings);
     } catch (err) {
-      statusEl.textContent = 'Could not load history — check internet connection and try again.';
+      statusEl.textContent = t('err_load_fail');
     } finally {
       goBtn.disabled = false;
-      goBtn.textContent = 'Show History';
+      goBtn.textContent = t('show_history_btn');
     }
   });
+
+  window.onLangChange = () => {
+    if (currentReadings.length) renderResults(currentReadings);
+  };
 
   function renderResults(readings){
     resultsEl.innerHTML = '';
 
     if (!readings.length) {
-      resultsEl.innerHTML = '<div class="empty">No readings saved for this person and month yet.</div>';
+      resultsEl.innerHTML = `<div class="empty">${t('empty_history')}</div>`;
       return;
     }
 
@@ -286,14 +315,14 @@
     if (bpReadings.length) {
       const avgSys = Math.round(bpReadings.reduce((s, r) => s + Number(r.systolic), 0) / bpReadings.length);
       const avgDia = Math.round(bpReadings.reduce((s, r) => s + Number(r.diastolic), 0) / bpReadings.length);
-      summaryHTML += `<div class="box"><div class="num">${avgSys}/${avgDia}</div><div class="cap">Avg Blood Pressure</div></div>`;
+      summaryHTML += `<div class="box"><div class="num">${avgSys}/${avgDia}</div><div class="cap">${t('avg_bp')}</div></div>`;
     }
     if (weightReadings.length) {
       const avgW = (weightReadings.reduce((s, r) => s + Number(r.weight), 0) / weightReadings.length).toFixed(1);
-      summaryHTML += `<div class="box"><div class="num">${avgW} kg</div><div class="cap">Avg Weight</div></div>`;
+      summaryHTML += `<div class="box"><div class="num">${avgW} kg</div><div class="cap">${t('avg_weight')}</div></div>`;
     }
     if (!summaryHTML) {
-      summaryHTML = `<div class="box" style="grid-column:1/3;"><div class="num">${readings.length}</div><div class="cap">Readings Logged</div></div>`;
+      summaryHTML = `<div class="box" style="grid-column:1/3;"><div class="num">${readings.length}</div><div class="cap">${t('readings_logged')}</div></div>`;
     }
     summary.innerHTML = summaryHTML;
     resultsEl.appendChild(summary);
@@ -321,13 +350,13 @@
     wrap.innerHTML = `
       <div class="when" style="justify-content:space-between; display:flex;">
         <span>${fmtDate(r.date)} ${tag}</span>
-        <button type="button" class="edit-link">Edit</button>
+        <button type="button" class="edit-link">${t('edit_link')}</button>
       </div>
       <div class="figures">
-        ${fig(r.systolic, 'Upper')}
-        ${fig(r.diastolic, 'Lower')}
-        ${fig(r.pulse, 'Pulse')}
-        ${fig(r.weight, 'Weight kg')}
+        ${fig(r.systolic, t('fig_upper'))}
+        ${fig(r.diastolic, t('fig_lower'))}
+        ${fig(r.pulse, t('fig_pulse'))}
+        ${fig(r.weight, t('fig_weight'))}
       </div>
     `;
     wrap.querySelector('.edit-link').addEventListener('click', () => {
@@ -341,22 +370,22 @@
     const wrap = document.createElement('div');
     wrap.className = 'edit-form';
     wrap.innerHTML = `
-      <div class="when">${fmtDate(r.date)} — editing</div>
+      <div class="when">${fmtDate(r.date)} ${t('editing_suffix')}</div>
       <div class="edit-ampm">
-        <button type="button" class="ampm-opt" data-val="AM">☀️ Morning</button>
-        <button type="button" class="ampm-opt" data-val="PM">🌙 Evening</button>
+        <button type="button" class="ampm-opt" data-val="AM">${t('am_btn').replace(' (AM)','')}</button>
+        <button type="button" class="ampm-opt" data-val="PM">${t('pm_btn').replace(' (PM)','')}</button>
       </div>
       <div class="field-row">
-        <div class="field"><label>Upper</label><input type="number" inputmode="numeric" class="e-systolic" value="${r.systolic || ''}"></div>
-        <div class="field"><label>Lower</label><input type="number" inputmode="numeric" class="e-diastolic" value="${r.diastolic || ''}"></div>
+        <div class="field"><label>${t('fig_upper')}</label><input type="number" inputmode="numeric" class="e-systolic" value="${r.systolic || ''}"></div>
+        <div class="field"><label>${t('fig_lower')}</label><input type="number" inputmode="numeric" class="e-diastolic" value="${r.diastolic || ''}"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Pulse</label><input type="number" inputmode="numeric" class="e-pulse" value="${r.pulse || ''}"></div>
-        <div class="field"><label>Weight kg</label><input type="number" inputmode="decimal" step="0.1" class="e-weight" value="${r.weight || ''}"></div>
+        <div class="field"><label>${t('fig_pulse')}</label><input type="number" inputmode="numeric" class="e-pulse" value="${r.pulse || ''}"></div>
+        <div class="field"><label>${t('fig_weight')}</label><input type="number" inputmode="decimal" step="0.1" class="e-weight" value="${r.weight || ''}"></div>
       </div>
       <div class="edit-actions">
-        <button type="button" class="cancel-edit">Cancel</button>
-        <button type="button" class="save-edit">Save</button>
+        <button type="button" class="cancel-edit">${t('cancel_btn')}</button>
+        <button type="button" class="save-edit">${t('save_btn')}</button>
       </div>
     `;
     const ampmBtns = wrap.querySelectorAll('.ampm-opt');
@@ -388,17 +417,17 @@
       const hasBP = updated.systolic || updated.diastolic;
       const hasBoth = updated.systolic && updated.diastolic;
       if (hasBP && !hasBoth) {
-        alert('Please enter both Upper and Lower, or leave both blank.');
+        alert(t('err_bp_both'));
         return;
       }
       if (!hasBoth && !updated.weight) {
-        alert('Please enter blood pressure, weight, or both.');
+        alert(t('err_need_one'));
         return;
       }
 
       const saveBtnEl = wrap.querySelector('.save-edit');
       saveBtnEl.disabled = true;
-      saveBtnEl.textContent = 'Saving...';
+      saveBtnEl.textContent = t('saving_btn');
 
       try {
         await fetch(SCRIPT_URL, {
@@ -413,9 +442,9 @@
         editingRowId = null;
         renderResults(currentReadings);
       } catch (err) {
-        alert('Could not save the edit — check internet connection and try again.');
+        alert(t('err_edit_fail'));
         saveBtnEl.disabled = false;
-        saveBtnEl.textContent = 'Save';
+        saveBtnEl.textContent = t('save_btn');
       }
     });
 
